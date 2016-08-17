@@ -1,0 +1,63 @@
+
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+// In this section you declare the dependencies for your production and test code
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.14'
+}
+
+subprojects { 
+  apply plugin: 'java'
+  apply plugin: 'eclipse'
+  apply plugin: 'maven'
+  version = '1.0'  
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8  
+  [compileJava,compileTestJava,javadoc]*.options*.encoding = 'UTF-8'
+  ext {  
+    springVersion = '3.2.11.RELEASE'  
+    hibernateVersion='4.3.1.Final'  
+  } 
+  repositories {
+    mavenCentral()
+  }
+  jar {
+    manifest {
+      attributes("Implementation-Title": "Gradle")
+    }
+  }
+  configurations {
+    // Ignore dependencies
+    all*.exclude group: 'commons-httpclient'
+    all*.exclude group: 'commons-beanutils', module: 'commons-beanutils'
+  }
+  dependencies {
+    compile(
+        'commons-configuration:commons-configuration:1.10',
+        'commons-collections:commons-collections:3.2.2',
+        'org.apache.logging.log4j:log4j-core:2.5',
+        'org.slf4j:slf4j-api:1.7.19',
+        'org.apache.logging.log4j:log4j-slf4j-impl:2.5',
+        'org.reflections:reflections:0.9.10',
+        'org.apache.commons:commons-lang3:3.4'
+    )
+    // Non-maven dependencies
+    ext.jarTree = fileTree(dir: 'libs', include: '**/*.jar')
+    ext.rootProjectLibs = new File(rootProject.rootDir, 'libs').getAbsolutePath()
+    ext.jarTree += fileTree(dir: rootProjectLibs, include: '**/*.jar')
+    compile jarTree
+    testCompile(  
+        "org.springframework:spring-test:$springVersion",  
+        "junit:junit:4.11"  
+    ) 
+  }
+  // 显示当前项目下所有用于 compile 的 jar.
+  task listJars(description: 'Display all compile jars.') << {
+    configurations.compile.each { File file -> println file.name }
+  }
+}
