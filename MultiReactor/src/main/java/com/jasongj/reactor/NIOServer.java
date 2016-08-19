@@ -2,7 +2,6 @@ package com.jasongj.reactor;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -22,29 +21,26 @@ public class NIOServer {
     serverSocketChannel.configureBlocking(false);
     serverSocketChannel.bind(new InetSocketAddress(1234));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+    
+    Processor[] processors = new Processor[1];
+    for(int i = 0; i < processors.length; i++) {
+      processors[i] = new Processor();
+//      processors[i].start();
+    }
 
     while (selector.select() > 0) {
       Set<SelectionKey> keys = selector.selectedKeys();
       for (SelectionKey key : keys) {
+        keys.remove(key);
         if (key.isAcceptable()) {
           ServerSocketChannel acceptServerSocketChannel = (ServerSocketChannel) key.channel();
           SocketChannel socketChannel = acceptServerSocketChannel.accept();
           socketChannel.configureBlocking(false);
           LOGGER.info("Accept request from {}", socketChannel.getRemoteAddress());
-          socketChannel.register(selector, SelectionKey.OP_READ);
-        } else if (key.isReadable()) {
-          SocketChannel socketChannel = (SocketChannel) key.channel();
-          ByteBuffer buffer = ByteBuffer.allocate(1024);
-          int count = socketChannel.read(buffer);
-          if (count <= 0) {
-            socketChannel.close();
-            key.cancel();
-            LOGGER.info("Received invalide data, close the connection");
-            continue;
-          }
-          LOGGER.info("Received message {}", new String(buffer.array()));
+//          Processor processor = processors[(int)((index++)/1)];
+          Processor processor = processors[0];
+          processor.addChannel(socketChannel);
         }
-        keys.remove(key);
       }
     }
   }
